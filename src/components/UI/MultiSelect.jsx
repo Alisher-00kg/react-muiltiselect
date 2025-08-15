@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo, useCallback, useRef, useEffect } from "react";
 import styled from "styled-components";
 import { Icons } from "../../assets";
 
@@ -7,33 +7,65 @@ export const Multiselect = ({
   selectedOptions,
   onSelectionChange,
   placeholder,
+  loading = false,
 }) => {
   const [search, setSearch] = useState("");
   const [open, setOpen] = useState(false);
+  const containerRef = useRef(null);
 
-  const filteredOptions = options.filter((opt) =>
-    opt.label.toLowerCase().includes(search.toLowerCase())
+  const filteredOptions = useMemo(() => {
+    return options.filter((opt) =>
+      opt.label.toLowerCase().includes(search.toLowerCase())
+    );
+  }, [options, search]);
+
+  const toggleOption = useCallback(
+    (value) => {
+      if (selectedOptions.includes(value)) {
+        onSelectionChange(selectedOptions.filter((v) => v !== value));
+      } else {
+        onSelectionChange([...selectedOptions, value]);
+      }
+      setSearch("");
+    },
+    [selectedOptions, onSelectionChange]
   );
 
-  const toggleOption = (value) => {
-    if (selectedOptions.includes(value)) {
+  const removeOption = useCallback(
+    (value) => {
       onSelectionChange(selectedOptions.filter((v) => v !== value));
-    } else {
-      onSelectionChange([...selectedOptions, value]);
-    }
-    setSearch("");
-  };
+    },
+    [selectedOptions, onSelectionChange]
+  );
 
-  const removeOption = (value) => {
-    onSelectionChange(selectedOptions.filter((v) => v !== value));
-  };
-  const clearAll = () => {
+  const clearAll = useCallback(() => {
     onSelectionChange([]);
     setSearch("");
+  }, [onSelectionChange]);
+
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (containerRef.current && !containerRef.current.contains(e.target)) {
+        setOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const handleKeyDown = (e) => {
+    if (!open) return;
+    if (e.key === "Escape") setOpen(false);
+    if (e.key === "Enter") {
+      if (filteredOptions.length > 0) toggleOption(filteredOptions[0].value);
+    }
   };
 
   return (
-    <Wrapper>
+    <Wrapper ref={containerRef}>
+      {selectedOptions.length > 0 && (
+        <ClearAllBtn onClick={clearAll}>Clear all</ClearAllBtn>
+      )}
       <InputsContainer>
         {selectedOptions.map((val) => {
           const item = options.find((o) => o.value === val);
@@ -46,20 +78,15 @@ export const Multiselect = ({
             </InputChip>
           );
         })}
-        {selectedOptions.length > 0 && (
-          <ClearAllBtn onClick={clearAll}>Очистить всё</ClearAllBtn>
-        )}
       </InputsContainer>
-      <DropdownBox onClick={() => setOpen(!open)}>
+      <DropdownBox onClick={() => setOpen(true)}>
         <Input
           type="text"
-          placeholder={placeholder || "Выберите..."}
+          placeholder={placeholder || "Choose..."}
           value={search}
-          onChange={(e) => {
-            setSearch(e.target.value);
-            setOpen(true);
-          }}
-          onClick={(e) => e.stopPropagation()}
+          onChange={(e) => setSearch(e.target.value)}
+          onFocus={() => setOpen(true)}
+          onKeyDown={handleKeyDown}
         />
         {search && (
           <ClearSearchBtn onClick={() => setSearch("")}>
@@ -73,7 +100,9 @@ export const Multiselect = ({
 
       {open && (
         <OptionsList>
-          {filteredOptions.length > 0 ? (
+          {loading ? (
+            <NoResults>Loading . . .</NoResults>
+          ) : filteredOptions.length > 0 ? (
             filteredOptions.map((opt) => (
               <Option
                 key={opt.value}
@@ -84,7 +113,7 @@ export const Multiselect = ({
               </Option>
             ))
           ) : (
-            <NoResults>Ничего не найдено</NoResults>
+            <NoResults>No results (- _ -)</NoResults>
           )}
         </OptionsList>
       )}
@@ -96,14 +125,17 @@ const Wrapper = styled.div`
   width: 280px;
   position: relative;
   font-family: sans-serif;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
 `;
 
 const InputsContainer = styled.div`
-  max-height: 100px;
-  overflow-y: scroll;
+  max-height: 280px;
+  overflow-y: auto;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 8px;
   margin-bottom: 8px;
 `;
 
@@ -159,14 +191,13 @@ const OptionsList = styled.ul`
   left: 0;
   margin-top: 4px;
   width: 100%;
-  max-height: 160px;
+  max-height: 260px;
   overflow-y: auto;
   border: 1px solid #ccc;
   border-radius: 6px;
   background: #fff;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
   list-style: none;
-  padding: 0;
   z-index: 10;
 `;
 
@@ -174,7 +205,6 @@ const Option = styled.li`
   padding: 8px;
   cursor: pointer;
   background: ${({ selected }) => (selected ? "#f0f8ff" : "transparent")};
-
   &:hover {
     background: #f5f5f5;
   }
@@ -187,13 +217,14 @@ const NoResults = styled.li`
 `;
 
 const ClearAllBtn = styled.button`
-  font-size: 12px;
+  font-size: 14px;
   color: #666;
   background: none;
   border: none;
   cursor: pointer;
   text-decoration: underline;
 `;
+
 const ClearSearchBtn = styled.button`
   border: none;
   background: none;

@@ -1,8 +1,38 @@
-# React + Vite
+# Multiselect Component
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Описание
 
-Currently, two official plugins are available:
+1. Этот проект демонстрирует использование кастомного `React-компонента Multiselect`. Компонент позволяет:
+2. Выбирать несколько опций из выпадающего списка
+3. Искать по опциям
+4. Удалять выбранные опции по одной или сразу все
+5. Поддерживает динамические данные из API
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react/README.md) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+# Установка
+
+`git clone <ваш_репозиторий>`
+`cd <папка_проекта>`
+
+# Установите зависимости:
+
+`npm install`
+или
+`yarn install`
+
+# Запуск проекта в режиме разработки
+
+`npm run dev`
+`
+
+# Особенности
+
+`Поддержка поиска по опциям`
+`Возможность удаления отдельных или всех выбранных опций`
+`Адаптируется к большому количеству данных (прокрутка списка)`
+`Стиль реализован через styled-components (можно заменить на CSS или Tailwind)`
+`Обрабатывает пустые массивы опций, показывая сообщение No results`
+
+# Примечания
+
+1. Можно использовать любые массивы объектов { label, value } для других случаев, не только временные зоны
+2. Компонент полностью контролируемый через selectedOptions и onSelectionChange
