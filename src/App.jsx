@@ -12,7 +12,7 @@ function App() {
     const getTimeZones = async () => {
       setLoading(true);
       try {
-        const { data } = await axiosInstance();
+        const { data } = await axiosInstance("/api/timezones");
         const formattedOptions = data?.map((zone) => ({
           label: zone,
           value: zone,
